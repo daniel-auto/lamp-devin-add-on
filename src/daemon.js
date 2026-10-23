@@ -23,6 +23,7 @@ export function createAddon({ inbox, link, config = DEFAULTS, now = () => Date.n
     }
     while (history.length && t - history[0].at > 3_600_000) history.shift()
     const notes = await readInbox(inbox, t, log)
+    for (const id of unknownKeys.keys()) if (!notes.some((n) => n.id === id)) unknownKeys.delete(id)
     const state = await link.state().catch(() => null)
     const choice = decide(notes, state, history, t, config)
     if (choice.wait) {

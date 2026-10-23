@@ -2,7 +2,15 @@
 # Installs the add-on as a launchd agent for this user: starts at login, restarts if it stops.
 set -eu
 here=$(cd "$(dirname "$0")/../.." && pwd)
-node=$(command -v node) || { echo "node (>= 20) is needed: Harness CLI brings it" >&2; exit 1; }
+# Node on PATH, else the one Harness installed for itself (its shim calls it by absolute path).
+node=$(command -v node 2>/dev/null || true)
+runtime="$HOME/.harness/runtime"
+if [ -z "$node" ] && [ -r "$runtime/current-node" ]; then
+  managed=$(cat "$runtime/current-node")
+  case "$managed" in "$runtime"/*) [ -x "$managed" ] && node=$managed ;; esac
+fi
+[ -n "$node" ] && "$node" -e 'process.exit(+process.versions.node.split(".")[0] >= 20 ? 0 : 1)' \
+  || { echo "node (>= 20) is needed: install Harness, which brings one" >&2; exit 1; }
 harness=$(command -v harness) || { echo "harness CLI not found: install Harness first" >&2; exit 1; }
 home_dir="$HOME/.lamp-devin-addon"
 mkdir -p "$home_dir/inbox/done"
