@@ -28,9 +28,9 @@ export function createAddon({ inbox, link, config = DEFAULTS, summarize = null, 
     for (const n of notes) if (summaries.get(n.id)) n.summary = summaries.get(n.id)
     const state = await link.state().catch(() => null)
     let choice = decide(notes, state, history, t, config)
-    // Claude is asked only when this note is about to be proposed and could be spoken, then decide again.
+    // Claude is asked only when this note is about to be proposed and could be spoken (a low one never is).
     const next = choice.propose && notes.find((n) => n.id === choice.propose.noteId)
-    if (next && summarize && config.say && next.messages && !next.summary && !summaries.has(next.id)) {
+    if (next && summarize && config.say && next.urgency !== 'low' && next.messages && !next.summary && !summaries.has(next.id)) {
       const line = await summarize(next)
       summaries.set(next.id, line)
       if (line) { next.summary = line; log(`summarized note ${next.id}: ${line}`) }

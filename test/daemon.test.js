@@ -129,3 +129,13 @@ test('with say on, a note\'s messages are summarized once by Claude and the summ
   await addon.step(); await addon.step()
   assert.deepEqual(asked, ['n8'])
 })
+
+test('a low note, which only lights, is never sent to Claude', async () => {
+  const r = rig('kept')
+  const asked = []
+  const addon = createAddon({ inbox: r.inbox, link: harnessLink({ bin: fake }), config: { ...DEFAULTS, say: true },
+    summarize: async (n) => { asked.push(n.id); return 'unused' } })
+  put(r.inbox, 'n9', { urgency: 'low', messages: ['Office closed Monday'] })
+  assert.equal((await addon.step()).act, 'light')
+  assert.deepEqual(asked, [])
+})
