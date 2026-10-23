@@ -29,6 +29,12 @@ Devin Automation (Slack) -> note -> inbox folder -> this add-on -> Harness -> la
 
 Not usable on a lamp yet. It depends on lampOS work that is designed but not built:
 
+A spoken summary also needs the lamp to speak a remote `say`, which it does not yet: on lampOS the
+judge sends a `say` to the policy on `addon/ask`, which nothing answers today, and the voice does not
+take an add-on's say yet (lampOS #2530). A remote say's words are the first builder's open call in
+lampOS `docs/addons.md` ("A remote say's words"). Until both land, a summary is shown in this add-on's
+log and in a simulated lamp, not spoken by a lamp.
+
 - lampOS: a remote add-on service on the lamp, and the judge accepting a remote writer
   (lampOS `docs/addons.md`, "Remote add-ons"; planned after 1.0, off by default).
 - Harness: the add-on route to the lamp's own Harness daemon (openharness#1654).

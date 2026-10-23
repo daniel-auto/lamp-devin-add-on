@@ -1,5 +1,5 @@
 // Notes arrive as JSON files in a folder (the Slack-channel reader writes them there too).
-import { readdir, readFile, rename, mkdir, unlink, stat } from 'node:fs/promises'
+import { readdir, readFile, rename, mkdir, unlink, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { parseNote } from './note.js'
 
@@ -35,6 +35,16 @@ export async function readInbox(dir, now = Date.now(), log = () => {}) {
   return notes
 }
 
+// A handled note is filed without its messages: done/ keeps the id for repeats, not the Slack text.
 export async function finish(dir, note) {
-  await rename(join(dir, note.file), join(dir, 'done', `${note.id}.json`)).catch(() => {})
+  const from = join(dir, note.file), to = join(dir, 'done', `${note.id}.json`)
+  try {
+    const { messages: _text, ...kept } = JSON.parse(await readFile(from, 'utf8'))
+    await writeFile(`${to}.tmp`, JSON.stringify(kept))
+    await rename(`${to}.tmp`, to)
+    await unlink(from)
+  } catch {
+    await unlink(from).catch(() => {})
+    await writeFile(to, JSON.stringify({ v: 1, id: note.id })).catch(() => {})
+  }
 }
