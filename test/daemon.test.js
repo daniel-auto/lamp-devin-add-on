@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs'
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, utimesSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -80,4 +80,17 @@ test('a propose with an unknown outcome is retried with the same key; any other 
   const [first, second, third] = keys()
   assert.equal(second, first)
   assert.notEqual(third, second)
+})
+
+test('a note still being written is left for the next read; a stale broken one is dropped', async () => {
+  const r = rig()
+  mkdirSync(r.inbox, { recursive: true })
+  const path = join(r.inbox, 'n6.json')
+  writeFileSync(path, '{"v": 1, "id": "n6", "ki')
+  assert.equal((await r.addon.step()).wait, 'no_notes')
+  assert.ok(existsSync(path))
+  const old = new Date(Date.now() - 60_000)
+  utimesSync(path, old, old)
+  await r.addon.step()
+  assert.ok(!existsSync(path))
 })
