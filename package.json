@@ -1,0 +1,11 @@
+{
+  "name": "lamp-devin-add-on",
+  "version": "0.1.0",
+  "description": "Devin watches Slack; the lamp notices you at your desk. A computer-side lamp add-on over Harness.",
+  "type": "module",
+  "private": true,
+  "bin": { "lamp-devin-addon": "bin/lamp-devin-addon.js" },
+  "engines": { "node": ">=20" },
+  "scripts": { "test": "node --test test/*.test.js" },
+  "license": "UNLICENSED"
+}

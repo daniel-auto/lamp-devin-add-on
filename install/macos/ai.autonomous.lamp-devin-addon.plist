@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>ai.autonomous.lamp-devin-addon</string>
+  <key>ProgramArguments</key>
+  <array><string>@NODE@</string><string>@APP@</string><string>run</string></array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>LAMP_ADDON_INBOX</key><string>@HOME_DIR@/inbox</string>
+    <key>LAMP_ADDON_HARNESS</key><string>@HARNESS@</string>
+    <key>LAMP_ADDON_SAY</key><string>@SAY@</string>
+    <key>LAMP_ADDON_DEVICE</key><string>@DEVICE@</string>
+  </dict>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>ThrottleInterval</key><integer>10</integer>
+  <key>StandardOutPath</key><string>@HOME_DIR@/addon.log</string>
+  <key>StandardErrorPath</key><string>@HOME_DIR@/addon.log</string>
+</dict>
+</plist>
