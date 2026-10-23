@@ -94,3 +94,15 @@ test('a note still being written is left for the next read; a stale broken one i
   await r.addon.step()
   assert.ok(!existsSync(path))
 })
+
+test('a note whose id was already handled is dropped, not nudged again', async () => {
+  const r = rig('kept')
+  put(r.inbox, 'n7')
+  assert.ok((await r.addon.step()).proposed)
+  await r.addon.step()
+  assert.ok(existsSync(join(r.inbox, 'done', 'n7.json')))
+  put(r.inbox, 'n7')
+  r.tick(10 * 60_000)
+  assert.equal((await r.addon.step()).wait, 'no_notes')
+  assert.ok(!existsSync(join(r.inbox, 'n7.json')))
+})

@@ -22,6 +22,8 @@ Write each note atomically: write it under a name that does not end in `.json`, 
 `<id>.json`. A `.json` file that does not parse is left alone for 10 seconds, in case it is still
 being written, and then deleted.
 
+A note whose `id` was already handled in the last 24 h is deleted unread, so a re-sent note nudges once.
+
 Any other field, a file over 2 KB, or a broken rule: the note is deleted unread.
 The lamp's spoken line, when there is one, is built from these fields by the add-on
 (`src/note.js`), so no Slack text reaches the lamp.
