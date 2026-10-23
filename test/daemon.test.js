@@ -6,6 +6,7 @@ import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createAddon } from '../src/daemon.js'
 import { harnessLink } from '../src/lamp.js'
+import { DEFAULTS } from '../src/policy.js'
 
 const fake = join(dirname(fileURLToPath(import.meta.url)), 'fixtures', 'fake-harness.js')
 
@@ -114,4 +115,17 @@ test('a note whose id was already handled is dropped, not nudged again', async (
   r.tick(10 * 60_000)
   assert.equal((await r.addon.step()).wait, 'no_notes')
   assert.ok(!existsSync(join(r.inbox, 'n7.json')))
+})
+
+test('with say on, a note\'s messages are summarized once by Claude and the summary is spoken', async () => {
+  const r = rig('kept')
+  const asked = []
+  const addon = createAddon({ inbox: r.inbox, link: harnessLink({ bin: fake }), config: { ...DEFAULTS, say: true },
+    summarize: async (n) => { asked.push(n.id); return 'Your lead wants the deploy notes by 3 pm.' } })
+  put(r.inbox, 'n8', { messages: ['Deploy notes by 3 pm please', 'CI is green'] })
+  assert.equal((await addon.step()).act, 'say')
+  const propose = r.calls().find((c) => c[2] === 'propose')
+  assert.equal(propose[propose.indexOf('--note') + 1], 'Your lead wants the deploy notes by 3 pm.')
+  await addon.step(); await addon.step()
+  assert.deepEqual(asked, ['n8'])
 })

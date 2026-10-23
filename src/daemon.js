@@ -3,9 +3,10 @@ import { randomUUID } from 'node:crypto'
 import { readInbox, finish } from './inbox.js'
 import { decide, DEFAULTS } from './policy.js'
 
-export function createAddon({ inbox, link, config = DEFAULTS, now = () => Date.now(), log = () => {} }) {
+export function createAddon({ inbox, link, config = DEFAULTS, summarize = null, now = () => Date.now(), log = () => {} }) {
   const history = [] // {at, decision, proposalId, note}
   const unknownKeys = new Map() // note id -> the key of a propose Harness could not confirm, sent again on the retry
+  const summaries = new Map() // note id -> Claude's line for its messages, or null: asked once per note
   let lastWait = null
 
   async function step() {
@@ -23,9 +24,18 @@ export function createAddon({ inbox, link, config = DEFAULTS, now = () => Date.n
     }
     while (history.length && t - history[0].at > 3_600_000) history.shift()
     const notes = await readInbox(inbox, t, log)
-    for (const id of unknownKeys.keys()) if (!notes.some((n) => n.id === id)) unknownKeys.delete(id)
+    for (const map of [unknownKeys, summaries]) for (const id of map.keys()) if (!notes.some((n) => n.id === id)) map.delete(id)
+    for (const n of notes) if (summaries.get(n.id)) n.summary = summaries.get(n.id)
     const state = await link.state().catch(() => null)
-    const choice = decide(notes, state, history, t, config)
+    let choice = decide(notes, state, history, t, config)
+    // Claude is asked only when this note is about to be proposed and could be spoken, then decide again.
+    const next = choice.propose && notes.find((n) => n.id === choice.propose.noteId)
+    if (next && summarize && config.say && next.messages && !next.summary && !summaries.has(next.id)) {
+      const line = await summarize(next)
+      summaries.set(next.id, line)
+      if (line) { next.summary = line; log(`summarized note ${next.id}: ${line}`) }
+      choice = decide(notes, state, history, t, config)
+    }
     if (choice.wait) {
       if (choice.wait !== lastWait) log(`waiting: ${choice.wait}`)
       lastWait = choice.wait
