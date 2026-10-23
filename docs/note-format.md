@@ -18,6 +18,10 @@ A note says *that* something happened on Slack, never *what* was said.
 | `at` | when Devin saw it, ms since the epoch |
 | `expiresAt` | optional, at most 4 h after `at`; default 1 h |
 
+Write each note atomically: write it under a name that does not end in `.json`, then rename it to
+`<id>.json`. A `.json` file that does not parse is left alone for 10 seconds, in case it is still
+being written, and then deleted.
+
 Any other field, a file over 2 KB, or a broken rule: the note is deleted unread.
 The lamp's spoken line, when there is one, is built from these fields by the add-on
 (`src/note.js`), so no Slack text reaches the lamp.
