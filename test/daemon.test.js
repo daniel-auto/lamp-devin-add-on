@@ -26,6 +26,15 @@ function put(inbox, id, extra = {}) {
     JSON.stringify({ v: 1, id, kind: 'messages', count: 1, urgency: 'normal', at: Date.now(), ...extra }))
 }
 
+test('with no room/presence on the lamp, nobody counts as at the desk and nothing is proposed', async () => {
+  const r = rig('kept')
+  writeFileSync(process.env.FAKE_STATE, JSON.stringify({ devices: [{ deviceId: 'lamp', online: true, topics: {
+    'room/state': { value: { state: 'busy' } }, 'voice/state': { value: { state: 'resting' } } } }] }))
+  put(r.inbox, 'n1')
+  assert.equal((await r.addon.step()).wait, 'not_at_desk')
+  assert.ok(!r.calls().some((c) => c[2] === 'propose'))
+})
+
 test('a note becomes one light proposal, and a kept one is filed as done', async () => {
   const r = rig('kept')
   assert.equal((await r.addon.step()).wait, 'no_notes')

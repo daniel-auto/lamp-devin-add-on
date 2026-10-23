@@ -15,7 +15,10 @@ Devin Automation (Slack) -> note -> inbox folder -> this add-on -> Harness -> la
 
 - Light first: a short warm glow.
 - A spoken line only for `urgent` notes, only with `LAMP_ADDON_SAY=on`, and built from the note's
-  fields by this add-on (`src/note.js`), so no Slack text reaches the lamp.
+  fields by this add-on (`src/note.js`), so no Slack text or name reaches the lamp.
+- Only when the lamp says someone is at the desk (`room/presence`) and its voice is resting. A lamp
+  that doesn't publish `room/presence` (lamp-eyes without `LAMP_PRESENCE=on`) gets no nudges: an
+  absent topic is unknown, never guessed from another one such as `room/state`.
 - Its own limits, stricter than the lamp's: one undecided proposal at a time, a kept nudge at most
   every 5 minutes and 6 an hour, 5 minutes' backoff after a drop.
 - A kept note is filed in `inbox/done/`; a dropped one is tried again later until it expires.

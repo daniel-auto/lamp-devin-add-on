@@ -4,7 +4,7 @@ Devin writes one JSON file per note into the inbox (`~/.lamp-devin-addon/inbox/<
 A note says *that* something happened on Slack, never *what* was said.
 
 ```json
-{"v": 1, "id": "slack-20261023-0912", "kind": "messages", "count": 3, "urgency": "urgent", "from": "Lead", "at": 1792745159000, "expiresAt": 1792748759000}
+{"v": 1, "id": "slack-20261023-0912", "kind": "messages", "count": 3, "urgency": "urgent", "at": 1792745159000, "expiresAt": 1792748759000}
 ```
 
 | field | rule |
@@ -14,7 +14,6 @@ A note says *that* something happened on Slack, never *what* was said.
 | `kind` | `messages`, `mentions` or `news` |
 | `count` | 1–999 |
 | `urgency` | `low`, `normal` or `urgent` |
-| `from` | optional label, 1–32 letters, digits, spaces, `.'-` (a role such as "Lead", not a handle) |
 | `at` | when Devin saw it, ms since the epoch |
 | `expiresAt` | optional, at most 4 h after `at`; default 1 h |
 
