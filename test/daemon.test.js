@@ -15,6 +15,7 @@ function rig(decision = 'kept', someone = true) {
   writeFileSync(state, JSON.stringify({ devices: [{ deviceId: 'lamp', online: true, topics: {
     'room/presence': { value: { someone } }, 'voice/state': { value: { state: 'resting' } } } }] }))
   process.env.FAKE_STATE = state; process.env.FAKE_CALLS = calls; process.env.FAKE_DECISION = decision
+  delete process.env.FAKE_PROPOSE_ERROR
   let t = Date.now()
   const addon = createAddon({ inbox, link: harnessLink({ bin: fake }), now: () => t })
   return { addon, inbox, calls: () => (existsSync(calls) ? readFileSync(calls, 'utf8') : '').trim().split('\n').filter(Boolean).map((l) => JSON.parse(l)), tick: (ms) => { t += ms } }
@@ -62,4 +63,21 @@ test('a note carrying text is dropped from the inbox unread', async () => {
   put(r.inbox, 'n4', { text: 'secret' })
   assert.equal((await r.addon.step()).wait, 'no_notes')
   assert.ok(!existsSync(join(r.inbox, 'n4.json')))
+})
+
+test('a propose with an unknown outcome is retried with the same key; any other failure gets a new one', async () => {
+  const r = rig('kept')
+  put(r.inbox, 'n5')
+  const keys = () => r.calls().filter((c) => c[2] === 'propose').map((c) => c[c.indexOf('--key') + 1])
+  process.env.FAKE_PROPOSE_ERROR = 'OUTCOME_UNKNOWN'
+  assert.ok((await r.addon.step()).failed)
+  r.tick(5 * 60_000 + 1)
+  process.env.FAKE_PROPOSE_ERROR = 'RATE_LIMITED'
+  assert.ok((await r.addon.step()).failed)
+  r.tick(5 * 60_000 + 1)
+  delete process.env.FAKE_PROPOSE_ERROR
+  assert.ok((await r.addon.step()).proposed)
+  const [first, second, third] = keys()
+  assert.equal(second, first)
+  assert.notEqual(third, second)
 })

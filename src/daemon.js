@@ -5,6 +5,7 @@ import { decide, DEFAULTS } from './policy.js'
 
 export function createAddon({ inbox, link, config = DEFAULTS, now = () => Date.now(), log = () => {} }) {
   const history = [] // {at, decision, proposalId, note}
+  const unknownKeys = new Map() // note id -> the key of a propose Harness could not confirm, sent again on the retry
   let lastWait = null
 
   async function step() {
@@ -31,8 +32,11 @@ export function createAddon({ inbox, link, config = DEFAULTS, now = () => Date.n
     }
     lastWait = null
     const note = notes.find((n) => n.id === choice.propose.noteId)
-    const key = randomUUID().replace(/-/g, '')
+    const key = unknownKeys.get(note.id) ?? randomUUID().replace(/-/g, '')
     const answer = await link.propose({ ...choice.propose, key }).catch((e) => ({ error: { message: e.message } }))
+    // OUTCOME_UNKNOWN: the lamp may have it. The same key makes the retry that proposal again, not a second nudge.
+    if (answer?.error?.code === 'OUTCOME_UNKNOWN') unknownKeys.set(note.id, key)
+    else unknownKeys.delete(note.id)
     if (!answer?.proposalId) {
       log(`propose failed: ${answer?.error?.code ?? answer?.error?.message ?? 'no answer'}`)
       history.push({ at: t, decision: 'dropped', note })
