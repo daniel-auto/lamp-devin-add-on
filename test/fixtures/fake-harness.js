@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // A stand-in Harness CLI: state from $FAKE_STATE, records calls to $FAKE_CALLS,
-// decides every proposal as $FAKE_DECISION (default kept).
+// decides every proposal as $FAKE_DECISION (default kept), and fails every propose as $FAKE_PROPOSE_ERROR when set.
 import { readFileSync, appendFileSync, existsSync } from 'node:fs'
 const args = process.argv.slice(2)
 if (process.env.FAKE_CALLS) appendFileSync(process.env.FAKE_CALLS, JSON.stringify(args) + '\n')
@@ -10,7 +10,11 @@ const out = (v) => console.log(JSON.stringify(v))
 if (verb === 'state') {
   out(existsSync(process.env.FAKE_STATE ?? '') ? JSON.parse(readFileSync(process.env.FAKE_STATE, 'utf8')) : { devices: [] })
 } else if (verb === 'propose') {
-  out({ proposalId: `p-${flag('--key')}`, state: 'sent', act: flag('--act'), addon: flag('--addon') })
+  // Harness's own shapes: {proposal} on success, {error, idempotencyKey} with exit 1 on failure.
+  if (process.env.FAKE_PROPOSE_ERROR) {
+    out({ error: { code: process.env.FAKE_PROPOSE_ERROR, message: 'fake' }, idempotencyKey: flag('--key') }); process.exit(1)
+  }
+  out({ proposal: { proposalId: `p-${flag('--key')}`, state: 'sent', act: flag('--act'), addon: flag('--addon') } })
 } else if (verb === 'proposal') {
-  out({ proposalId: args[3], state: process.env.FAKE_DECISION ?? 'kept', reason: 'fake' })
+  out({ proposal: { proposalId: args[3], state: process.env.FAKE_DECISION ?? 'kept', reason: 'fake' } })
 } else { out({ error: { code: 'INVALID_ARGUMENT' } }); process.exit(1) }

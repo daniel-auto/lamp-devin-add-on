@@ -20,13 +20,16 @@ export function harnessLink({ bin = 'harness', device, run = execFileJson } = {}
       if (p.sure !== undefined) args.push('--sure', String(p.sure))
       if (p.params) args.push('--params', JSON.stringify(p.params))
       if (p.note) args.push('--note', p.note)
-      return run(bin, args)
+      return unwrap(await run(bin, args))
     },
     async proposal(id) {
-      return run(bin, ['autonomous-device', 'addon', 'proposal', id, '--json'])
+      return unwrap(await run(bin, ['autonomous-device', 'addon', 'proposal', id, '--json']))
     },
   }
 }
+
+// `propose` and `proposal` answer {proposal: {proposalId, state, reason, …}}, or {error} (docs/autonomous-device-addons.md).
+const unwrap = (answer) => answer?.proposal ?? answer
 
 // The CLI prints one JSON answer, also on failure (exit 1).
 export function execFileJson(bin, args) {
