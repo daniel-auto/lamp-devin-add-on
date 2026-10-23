@@ -14,8 +14,10 @@ Devin Automation (Slack) -> note -> inbox folder -> this add-on -> Harness -> la
 ## What it does
 
 - Light first: a short warm glow.
-- A spoken line only for `urgent` notes, only with `LAMP_ADDON_SAY=on`, and built from the note's
-  fields by this add-on (`src/note.js`), so no Slack text or name reaches the lamp.
+- A spoken line only with `LAMP_ADDON_SAY=on`, for `urgent` notes and `normal` ones with a summary. When
+  a note carries its messages, Claude on this computer summarizes them through the
+  [Claude Agent SDK](https://code.claude.com/docs/en/agent-sdk/overview) (`src/summarize.js`) into one
+  line of at most 300 bytes; only that line goes to the lamp. Without messages, the line is the count.
 - Only when the lamp says someone is at the desk (`room/presence`) and its voice is resting. A lamp
   that doesn't publish `room/presence` (lamp-eyes without `LAMP_PRESENCE=on`) gets no nudges: an
   absent topic is unknown, never guessed from another one such as `room/state`.
@@ -39,7 +41,10 @@ is settled, only that file changes.
 
 ## Run
 
-Node 20 or newer (the Harness CLI brings it). No dependencies.
+Node 20 or newer (the Harness CLI brings it). One optional dependency, the Claude Agent SDK, for
+summaries (`npm install`); without it the add-on runs and says counts only. The SDK uses this
+computer's Claude credentials. For anything shipped to other people, use an `ANTHROPIC_API_KEY`:
+Anthropic does not allow claude.ai login in third-party products built on the Agent SDK.
 
 ```sh
 npm test                                   # against a fake Harness CLI
@@ -56,5 +61,7 @@ install/macos/uninstall.sh
 | `LAMP_ADDON_DEVICE` | the one connected device |
 | `LAMP_ADDON_SAY` | `off` |
 | `LAMP_ADDON_POLL_MS` | `3000` |
+| `LAMP_ADDON_SUMMARIZE` | `on` when say is on; `off` to skip Claude |
+| `LAMP_ADDON_MODEL` | `claude-opus-5-5` |
 
 The Devin side is in [docs/devin-automation.md](docs/devin-automation.md).

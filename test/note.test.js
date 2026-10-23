@@ -25,3 +25,28 @@ test('the spoken line is built from fields alone, on one line, within 300 bytes'
   assert.equal(line, 'You have 3 Slack messages, one looks urgent.')
   assert.ok(Buffer.byteLength(line) <= 300 && !/[\x00-\x1f\x7f]/.test(line))
 })
+
+test('a summary is the whole spoken line, up to Harness\'s 300 bytes', () => {
+  const summary = 'Your lead asked for the deploy notes by 3 pm; the other two are status updates.'
+  const r = parseNote({ ...good, summary: `  ${summary} ` }, now)
+  assert.equal(r.ok, true)
+  assert.equal(sayLine(r.note), summary)
+  assert.equal(parseNote({ ...good, summary: 'ễ'.repeat(100) }, now).ok, true) // 300 bytes
+  assert.equal(parseNote({ ...good, summary: 'ễ'.repeat(101) }, now).why, 'summary_too_long')
+})
+
+test('a summary the lamp would refuse is refused here first', () => {
+  assert.equal(parseNote({ ...good, summary: '' }, now).why, 'summary')
+  assert.equal(parseNote({ ...good, summary: 42 }, now).why, 'summary')
+  assert.equal(parseNote({ ...good, summary: 'two\nlines' }, now).why, 'summary_control')
+  assert.equal(parseNote({ ...good, summary: 'see https://x.io' }, now).why, 'summary_link_or_handle')
+  assert.equal(parseNote({ ...good, summary: 'from <@U123>' }, now).why, 'summary_link_or_handle')
+})
+
+test('a note may carry its messages for Claude here, within limits', () => {
+  assert.deepEqual(parseNote({ ...good, messages: ['Deploy notes by 3?', 'CI is green'] }, now).note.messages, ['Deploy notes by 3?', 'CI is green'])
+  assert.equal(parseNote({ ...good, messages: [] }, now).why, 'messages')
+  assert.equal(parseNote({ ...good, messages: [42] }, now).why, 'messages')
+  assert.equal(parseNote({ ...good, messages: ['x'.repeat(4001)] }, now).why, 'messages')
+  assert.equal(parseNote({ ...good, messages: Array(51).fill('hi') }, now).why, 'messages')
+})

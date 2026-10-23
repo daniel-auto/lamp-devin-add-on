@@ -6,7 +6,7 @@ export const DEFAULTS = {
   perHour: 6,
   dropBackoffMs: 5 * 60 * 1000, // after a drop, wait as the lamp's judge will
   holdsMs: 30_000,
-  say: false, // spoken lines only when turned on, and only for urgent notes
+  say: false, // spoken lines only when turned on: urgent notes, and normal ones with a summary
   whys: { messages: 'messages', mentions: 'messages', news: 'news' },
   light: { colour: 'warm', level: 2 },
 }
@@ -33,6 +33,8 @@ export function decide(notes, state, history, now, config = DEFAULTS) {
   const note = [...notes].sort((a, b) => order[a.urgency] - order[b.urgency] || a.at - b.at)[0]
   const why = config.whys[note.kind]
   const base = { noteId: note.id, why, holdsMs: config.holdsMs, sure: note.urgency === 'urgent' ? 0.8 : 0.5 }
-  if (config.say && note.urgency === 'urgent') return { propose: { ...base, act: 'say', note: sayLine(note) } }
+  // Spoken: an urgent note, or a normal one with a summary. A low note only ever lights.
+  const speaks = note.urgency === 'urgent' || (note.urgency === 'normal' && note.summary)
+  if (config.say && speaks) return { propose: { ...base, act: 'say', note: sayLine(note) } }
   return { propose: { ...base, act: 'light', params: config.light } }
 }

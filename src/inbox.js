@@ -1,9 +1,9 @@
-// Notes arrive as small JSON files in a folder (the Slack-channel reader writes them there too).
+// Notes arrive as JSON files in a folder (the Slack-channel reader writes them there too).
 import { readdir, readFile, rename, mkdir, unlink, stat } from 'node:fs/promises'
 import { join } from 'node:path'
 import { parseNote } from './note.js'
 
-const MAX_FILE_BYTES = 2048
+const MAX_FILE_BYTES = 256 * 1024 // room for a note's messages (50 of at most 4,000 characters)
 const WRITING_MS = 10_000 // a file this new that is not JSON yet may still be being written: left for the next read
 const DONE_KEEP_MS = 24 * 60 * 60 * 1000 // a handled note's id is remembered this long, past any note's expiry
 

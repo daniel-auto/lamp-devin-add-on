@@ -38,3 +38,13 @@ test('our own limits hold before the lamp is asked', () => {
 test('the most urgent note goes first', () => {
   assert.equal(decide([note('low', 'a'), note('urgent', 'b')], desk(), [], now).propose.noteId, 'b')
 })
+
+test('with say on, a summarized normal note is spoken; a low one only lights', () => {
+  const sayOn = { ...DEFAULTS, say: true }
+  const summarized = (urgency) => ({ ...note(urgency), summary: 'The release moved to Friday.' })
+  const spoken = decide([summarized('normal')], desk(), [], now, sayOn).propose
+  assert.equal(spoken.act, 'say')
+  assert.equal(spoken.note, 'The release moved to Friday.')
+  assert.equal(decide([summarized('low')], desk(), [], now, sayOn).propose.act, 'light')
+  assert.equal(decide([summarized('normal')], desk(), [], now).propose.act, 'light')
+})
