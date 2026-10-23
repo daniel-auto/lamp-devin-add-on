@@ -26,3 +26,10 @@ test('a line the lamp would refuse, an error or no result means no summary', asy
   assert.equal(await createSummarizer({ query: () => { throw new Error('no auth') }, log: (l) => log.push(l) })(note), null)
   assert.match(log.join('\n'), /summary_link_or_handle[\s\S]*summary_too_long[\s\S]*no auth/)
 })
+
+test('the instructions keep a suspicious message to one sentence and answer in the messages\' language', async () => {
+  const calls = []
+  await createSummarizer({ query: fakeQuery([{ type: 'result', subtype: 'success', result: 'ok' }], calls) })(note)
+  assert.match(calls[0].options.systemPrompt, /one message looks\s+suspicious, with nothing of what it says/)
+  assert.match(calls[0].options.systemPrompt, /language most of the messages are written in/)
+})

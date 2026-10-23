@@ -26,6 +26,7 @@ Write each note atomically: write it under a name that does not end in `.json`, 
 being written, and then deleted.
 
 A note whose `id` was already handled in the last 24 h is deleted unread, so a re-sent note nudges once.
+A handled note is filed in `done/` without its `messages`; only its id and counts are kept.
 
 Any other field, a file over 256 KiB, or a broken rule: the note is deleted unread.
 The lamp's spoken line, when there is one, is the summary (Claude's, or the note's own), held to the same

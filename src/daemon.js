@@ -26,7 +26,7 @@ export function createAddon({ inbox, link, config = DEFAULTS, summarize = null, 
     const notes = await readInbox(inbox, t, log)
     for (const map of [unknownKeys, summaries]) for (const id of map.keys()) if (!notes.some((n) => n.id === id)) map.delete(id)
     for (const n of notes) if (summaries.get(n.id)) n.summary = summaries.get(n.id)
-    const state = await link.state().catch(() => null)
+    let state = await link.state().catch(() => null)
     let choice = decide(notes, state, history, t, config)
     // Claude is asked only when this note is about to be proposed and could be spoken (a low one never is).
     const next = choice.propose && notes.find((n) => n.id === choice.propose.noteId)
@@ -34,7 +34,9 @@ export function createAddon({ inbox, link, config = DEFAULTS, summarize = null, 
       const line = await summarize(next)
       summaries.set(next.id, line)
       if (line) { next.summary = line; log(`summarized note ${next.id}: ${line}`) }
-      choice = decide(notes, state, history, t, config)
+      // Summarizing takes seconds: the room is read again, so the line goes only to a desk that is still free.
+      state = await link.state().catch(() => null)
+      choice = decide(notes, state, history, now(), config)
     }
     if (choice.wait) {
       if (choice.wait !== lastWait) log(`waiting: ${choice.wait}`)

@@ -139,3 +139,23 @@ test('a low note, which only lights, is never sent to Claude', async () => {
   assert.equal((await addon.step()).act, 'light')
   assert.deepEqual(asked, [])
 })
+
+test('a kept note is filed in done/ without its Slack messages', async () => {
+  const r = rig('kept')
+  const addon = createAddon({ inbox: r.inbox, link: harnessLink({ bin: fake }), config: { ...DEFAULTS, say: true }, summarize: async () => 'A short line.' })
+  put(r.inbox, 'n10', { messages: ['the secret plan'] })
+  await addon.step(); await addon.step()
+  const filed = readFileSync(join(r.inbox, 'done', 'n10.json'), 'utf8')
+  assert.ok(!filed.includes('secret') && !existsSync(join(r.inbox, 'n10.json')))
+  assert.equal(JSON.parse(filed).id, 'n10')
+})
+
+test('the room is read again after summarizing: someone who left gets nothing', async () => {
+  const r = rig('kept')
+  const addon = createAddon({ inbox: r.inbox, link: harnessLink({ bin: fake }), config: { ...DEFAULTS, say: true },
+    summarize: async () => { writeFileSync(process.env.FAKE_STATE, JSON.stringify({ devices: [{ deviceId: 'lamp', online: true, topics: {
+      'room/presence': { value: { someone: false } }, 'voice/state': { value: { state: 'resting' } } } }] })); return 'A short line.' } })
+  put(r.inbox, 'n11', { messages: ['hello'] })
+  assert.equal((await addon.step()).wait, 'not_at_desk')
+  assert.ok(!r.calls().some((c) => c[2] === 'propose'))
+})
